@@ -256,6 +256,4 @@ rate(http_requests_total[5m])
 * Add CI/CD pipeline
 * Use Terraform for infra provisioning
 
----
 
-## 👨‍💻 Author
