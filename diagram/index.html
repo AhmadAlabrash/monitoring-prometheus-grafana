@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoring & Logging Stack Workflow</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --border: #dbe2ea;
+      --green: #1f9d61;
+      --orange: #f97316;
+      --yellow: #f59e0b;
+      --blue: #2457a7;
+      --red: #dc2626;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 44px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 14px auto 0;
+      max-width: 980px;
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .topology {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      align-items: stretch;
+      margin-top: 28px;
+    }
+
+    .server {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .server .head {
+      padding: 18px 20px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: 0.01em;
+    }
+
+    .server.green .head { background: linear-gradient(135deg, #159957, #1f9d61); }
+    .server.orange .head { background: linear-gradient(135deg, #e4572e, #f97316); }
+    .server.yellow .head { background: linear-gradient(135deg, #d97706, #f59e0b); }
+    .server.blue .head { background: linear-gradient(135deg, #1d4f91, #2457a7); }
+
+    .server .body {
+      padding: 22px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      flex: 1;
+    }
+
+    .icon-wrap {
+      height: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 54px;
+    }
+
+    .server h2 {
+      margin: 0;
+      text-align: center;
+      font-size: 28px;
+    }
+
+    .server p.lead {
+      margin: 0;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.55;
+      min-height: 72px;
+    }
+
+    .mini-box {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+    }
+
+    .mini-box h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      color: #111827;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .arrow-band {
+      margin: 28px 0 14px;
+      display: grid;
+      grid-template-columns: 1fr 120px 1fr 120px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .flow-card {
+      background: rgba(255,255,255,0.8);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .arrow {
+      text-align: center;
+      font-size: 34px;
+      color: #4b5563;
+      font-weight: 900;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr;
+      gap: 22px;
+      margin-top: 24px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .panel h2 {
+      margin: 0 0 16px;
+      font-size: 26px;
+    }
+
+    .dashboards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .dashboard-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .dashboard-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .chart {
+      height: 110px;
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(59,130,246,0.10), rgba(59,130,246,0.02)),
+        repeating-linear-gradient(
+          to right,
+          rgba(148,163,184,0.18) 0,
+          rgba(148,163,184,0.18) 1px,
+          transparent 1px,
+          transparent 52px
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(148,163,184,0.14) 0,
+          rgba(148,163,184,0.14) 1px,
+          transparent 1px,
+          transparent 26px
+        );
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .alerts {
+      display: grid;
+      gap: 14px;
+    }
+
+    .alert-box {
+      border-radius: 18px;
+      padding: 18px 18px;
+      color: #fff;
+      font-weight: 700;
+      line-height: 1.45;
+      box-shadow: var(--shadow);
+    }
+
+    .alert-critical { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .alert-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .alert-ok { background: linear-gradient(135deg, #22c55e, #15803d); }
+
+    .legend-row {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .dot.blue { background: #3b82f6; }
+    .dot.orange { background: #f59e0b; }
+    .dot.green { background: #22c55e; }
+    .dot.red { background: #ef4444; }
+
+    .footer-note {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.6);
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1200px) {
+      .topology { grid-template-columns: repeat(2, 1fr); }
+      .bottom-grid { grid-template-columns: 1fr; }
+      .dashboards { grid-template-columns: 1fr; }
+      .arrow-band { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); }
+    }
+
+    @media (max-width: 720px) {
+      .topology { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 34px; }
+      .page { padding: 20px 14px 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Monitoring &amp; Logging Stack Workflow</h1>
+      <p>
+        This project shows a full observability pipeline running on four servers: a Web Server that hosts the app and Alloy,
+        a Prometheus Server for metrics collection, a Loki Server for centralized logs, and a Grafana Server for dashboards,
+        visualization, alerting, and Slack notifications.
+      </p>
+    </section>
+
+    <section class="topology">
+      <article class="server blue">
+        <div class="head">Web Server</div>
+        <div class="body">
+          <div class="icon-wrap">💻</div>
+          <h2>Web + Alloy</h2>
+          <p class="lead">
+            Hosts the Flask application, exposes app metrics, exposes node metrics through Node Exporter,
+            and uses Alloy to ship logs and forward metrics.
+          </p>
+          <div class="mini-box">
+            <h3>Main components</h3>
+            <ul>
+              <li>Flask / Titan application on port 5000</li>
+              <li>Node Exporter on port 9100</li>
+              <li>Alloy agent for metrics and logs</li>
+              <li>Load generation + fake traffic scripts</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>What it sends</h3>
+            <ul>
+              <li>Application metrics → Prometheus</li>
+              <li>System metrics → Prometheus</li>
+              <li>Application logs → Loki</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>Why it matters</h3>
+            <ul>
+              <li>Shows CPU, memory, disk, and process health</li>
+              <li>Shows request rate, endpoint traffic, and app behavior</li>
+              <li>Produces logs for troubleshooting and alert investigations</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="server orange">
+        <div class="head">Prometheus Server</div>
+        <div class="body">
+          <div class="icon-wrap">🔥</div>
+          <h2>Prometheus</h2>
+          <p class="lead">
+            Scrapes metrics from configured targets, stores them as time-series data,
+            and answers PromQL queries used by Grafana dashboards and alerts.
+          </p>
+          <div class="mini-box">
+            <h3>Main responsibilities</h3>
+            <ul>
+              <li>Scrape interval collection from targets</li>
+              <li>Store metrics in a time-series database</li>
+              <li>Support PromQL queries for monitoring panels</li>
+              <li>Track target health and availability</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>Key targets</h3>
+            <ul>
+              <li>Prometheus self-monitoring</li>
+              <li>Web server system metrics job</li>
+              <li>Web server application metrics job</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>Example metrics</h3>
+            <ul>
+              <li>CPU utilization and load average</li>
+              <li>Memory available and disk usage</li>
+              <li>HTTP request totals and request rate</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="server green">
+        <div class="head">Loki Server</div>
+        <div class="body">
+          <div class="icon-wrap">🟢</div>
+          <h2>Loki</h2>
+          <p class="lead">
+            Receives and stores logs sent by Alloy, keeps labels for efficient log filtering,
+            and makes application logs searchable inside Grafana.
+          </p>
+          <div class="mini-box">
+            <h3>Main responsibilities</h3>
+            <ul>
+              <li>Log aggregation from the web server</li>
+              <li>Label-based log indexing and querying</li>
+              <li>Centralized log storage for troubleshooting</li>
+              <li>Support for log exploration in Grafana</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>Incoming data</h3>
+            <ul>
+              <li>App logs from <code>/var/log/titan</code></li>
+              <li>Error logs, access logs, info logs</li>
+              <li>Streams forwarded by Alloy</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>Why it matters</h3>
+            <ul>
+              <li>Correlates logs with metrics during incidents</li>
+              <li>Helps find root cause faster</li>
+              <li>Supports observability beyond dashboards</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="server yellow">
+        <div class="head">Grafana Server</div>
+        <div class="body">
+          <div class="icon-wrap">📊</div>
+          <h2>Grafana</h2>
+          <p class="lead">
+            Connects to Prometheus and Loki, builds dashboards, visualizes metrics and logs,
+            defines threshold-based alerts, and sends notifications to Slack.
+          </p>
+          <div class="mini-box">
+            <h3>Main responsibilities</h3>
+            <ul>
+              <li>Dashboards for system and application monitoring</li>
+              <li>Panels for CPU, memory, disk, and HTTP traffic</li>
+              <li>Alert rules, thresholds, and evaluation groups</li>
+              <li>Notification routing to Slack contact points</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>Data sources</h3>
+            <ul>
+              <li>Prometheus for metrics</li>
+              <li>Loki for logs</li>
+              <li>Slack webhook for notifications</li>
+            </ul>
+          </div>
+          <div class="mini-box">
+            <h3>Example outcomes</h3>
+            <ul>
+              <li>Production dashboards by environment and service</li>
+              <li>Root disk usage alerts and resolved notifications</li>
+              <li>Live troubleshooting with metrics + logs together</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="arrow-band">
+      <div class="flow-card">Web Server exposes metrics and logs</div>
+      <div class="arrow">➜</div>
+      <div class="flow-card">Prometheus scrapes metrics / Loki ingests logs</div>
+      <div class="arrow">➜</div>
+      <div class="flow-card">Grafana builds dashboards and sends alerts</div>
+    </section>
+
+    <section class="bottom-grid">
+      <div class="panel">
+        <h2>Dashboards &amp; Observability Views</h2>
+        <div class="dashboards">
+          <div class="dashboard-card">
+            <h3>System Dashboard</h3>
+            <div class="chart">
+              <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+                <polyline fill="none" stroke="#3b82f6" stroke-width="4" points="0,85 35,78 60,82 95,55 130,62 165,40 205,46 240,20 270,28 300,15" />
+              </svg>
+            </div>
+            <ul>
+              <li>CPU utilization</li>
+              <li>Memory available</li>
+              <li>Root disk usage</li>
+            </ul>
+          </div>
+          <div class="dashboard-card">
+            <h3>Application Dashboard</h3>
+            <div class="chart">
+              <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+                <polyline fill="none" stroke="#f59e0b" stroke-width="4" points="0,90 30,86 60,60 95,72 130,48 170,52 205,25 240,38 270,18 300,26" />
+              </svg>
+            </div>
+            <ul>
+              <li>HTTP requests total</li>
+              <li>Request rate by endpoint</li>
+              <li>Dynamic variable filtering</li>
+            </ul>
+          </div>
+          <div class="dashboard-card">
+            <h3>Logs &amp; Investigation</h3>
+            <div class="chart">
+              <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+                <rect x="30" y="60" width="28" height="32" fill="#22c55e" rx="4" />
+                <rect x="78" y="38" width="28" height="54" fill="#22c55e" rx="4" />
+                <rect x="126" y="50" width="28" height="42" fill="#22c55e" rx="4" />
+                <rect x="174" y="25" width="28" height="67" fill="#22c55e" rx="4" />
+                <rect x="222" y="14" width="28" height="78" fill="#22c55e" rx="4" />
+              </svg>
+            </div>
+            <ul>
+              <li>Search app logs by labels</li>
+              <li>Inspect errors and request traces</li>
+              <li>Correlate metrics with incidents</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="legend-row">
+          <span class="legend-item"><span class="dot blue"></span> Metrics from Prometheus</span>
+          <span class="legend-item"><span class="dot green"></span> Logs from Loki</span>
+          <span class="legend-item"><span class="dot orange"></span> App traffic and request rate</span>
+          <span class="legend-item"><span class="dot red"></span> Threshold breaches and alerts</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Alerting &amp; Notifications</h2>
+        <div class="alerts">
+          <div class="alert-box alert-critical">
+            🚨 Critical Alert<br />
+            Root Disk Usage &gt; 65%<br />
+            Grafana rule enters <strong>Firing</strong> state
+          </div>
+          <div class="alert-box alert-warning">
+            ⚠️ Warning Alert<br />
+            CPU or Memory threshold crossed<br />
+            Evaluation group checks every minute
+          </div>
+          <div class="alert-box alert-ok">
+            ✅ Resolved Notification<br />
+            Metric returned to normal range<br />
+            Slack receives recovery message
+          </div>
+        </div>
+
+        <div class="footer-note">
+          <strong>Notification path:</strong> Grafana evaluates Prometheus queries against thresholds,
+          applies alert rules and policies, then sends notifications through the configured Slack webhook.
+          This turns raw metrics into visible operational actions for monitoring teams.
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
