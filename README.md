@@ -11,8 +11,28 @@ This project demonstrates a complete **Monitoring & Observability Stack** deploy
 
 ![Architecture Diagram](diagram/diagram-of-the-project.png)
 
-
 ---
+
+## 🔄 Data Flow
+
+```text
+Web Server (Flask + Node Exporter + Alloy)
+        ↓
+   Metrics → Prometheus
+        ↓
+   Logs → Loki
+        ↓
+   Grafana (Dashboards + Alerts)
+        ↓
+   Slack Notifications 🚨
+```
+
+## 📊 Monitoring System Demo
+
+Watch the monitoring system in action:
+
+[![Monitoring Demo ▶️](https://img.youtube.com/vi/kubCmxxWDUE/maxresdefault.jpg)](https://youtu.be/kubCmxxWDUE)
+
 
 ## 📌 Architecture Overview
 
@@ -49,21 +69,8 @@ This project is based on a **4-server architecture**:
 
 ---
 
-## 🔄 Data Flow
 
-```text
-Web Server (Flask + Node Exporter + Alloy)
-        ↓
-   Metrics → Prometheus
-        ↓
-   Logs → Loki
-        ↓
-   Grafana (Dashboards + Alerts)
-        ↓
-   Slack Notifications 🚨
-```
 
----
 
 ## ⚙️ Features
 
